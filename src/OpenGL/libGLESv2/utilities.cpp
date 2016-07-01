@@ -1054,9 +1054,8 @@ namespace es2
 		case GL_DEPTH_COMPONENT16:
 		case GL_STENCIL_INDEX8:
 		case GL_DEPTH24_STENCIL8_OES:
-			return false;
 		default:
-			UNIMPLEMENTED();
+			return false;
 		}
 
 		return false;
@@ -1113,9 +1112,8 @@ namespace es2
 		case GL_RG32F:
 		case GL_RGB32F:
 		case GL_RGBA32F:
-			return false;
 		default:
-			UNIMPLEMENTED();
+			return false;
 		}
 
 		return false;
@@ -1172,9 +1170,8 @@ namespace es2
 		case GL_DEPTH_COMPONENT24:
 		case GL_DEPTH_COMPONENT32_OES:
 		case GL_DEPTH_COMPONENT32F:
-			return false;
 		default:
-			UNIMPLEMENTED();
+			return false;
 		}
 
 		return false;
