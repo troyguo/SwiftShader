@@ -50,6 +50,7 @@ namespace D3D9
 		const D3DQUERYTYPE type;
 
 		sw::Query *query;
+		UINT64 timestamp;
 	};
 }
 
