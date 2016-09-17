@@ -50,7 +50,7 @@ namespace sw
 			enableContinue = Int4(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF);
 		}
 
-		if(shader->instanceIdDeclared)
+		if(shader->isInstanceIdDeclared())
 		{
 			instanceID = *Pointer<Int>(data + OFFSET(DrawData,instanceID));
 		}
@@ -314,10 +314,10 @@ namespace sw
 			case Shader::OPCODE_INSERT:     insert(d, s0, s1.x, s2.x);      break;
 			case Shader::OPCODE_ALL:        all(d.x, s0);                   break;
 			case Shader::OPCODE_ANY:        any(d.x, s0);                   break;
-			case Shader::OPCODE_NOT:        not(d, s0);                     break;
-			case Shader::OPCODE_OR:         or(d, s0, s1);                  break;
-			case Shader::OPCODE_XOR:        xor(d, s0, s1);                 break;
-			case Shader::OPCODE_AND:        and(d, s0, s1);                 break;
+			case Shader::OPCODE_NOT:        bitwise_not(d, s0);             break;
+			case Shader::OPCODE_OR:         bitwise_or(d, s0, s1);          break;
+			case Shader::OPCODE_XOR:        bitwise_xor(d, s0, s1);         break;
+			case Shader::OPCODE_AND:        bitwise_and(d, s0, s1);         break;
 			case Shader::OPCODE_EQ:         equal(d, s0, s1);               break;
 			case Shader::OPCODE_NE:         notEqual(d, s0, s1);            break;
 			case Shader::OPCODE_TEXLDL:     TEXLDL(d, s0, src1);            break;
@@ -596,7 +596,7 @@ namespace sw
 		{
 			for(int i = 0; i < MAX_VERTEX_OUTPUTS; i++)
 			{
-				unsigned char usage = shader->output[i][0].usage;
+				unsigned char usage = shader->getOutput(i, 0).usage;
 
 				switch(usage)
 				{
@@ -856,11 +856,12 @@ namespace sw
 
 				switch(src.rel.type)
 				{
-				case Shader::PARAMETER_ADDR:   a = a0[component]; break;
-				case Shader::PARAMETER_TEMP:   a = r[src.rel.index][component]; break;
-				case Shader::PARAMETER_INPUT:  a = v[src.rel.index][component]; break;
-				case Shader::PARAMETER_OUTPUT: a = o[src.rel.index][component]; break;
-				case Shader::PARAMETER_CONST:  a = *Pointer<Float>(uniformAddress(src.bufferIndex, src.rel.index) + component * sizeof(float)); break;
+				case Shader::PARAMETER_ADDR:     a = a0[component]; break;
+				case Shader::PARAMETER_TEMP:     a = r[src.rel.index][component]; break;
+				case Shader::PARAMETER_INPUT:    a = v[src.rel.index][component]; break;
+				case Shader::PARAMETER_OUTPUT:   a = o[src.rel.index][component]; break;
+				case Shader::PARAMETER_CONST:    a = *Pointer<Float>(uniformAddress(src.bufferIndex, src.rel.index) + component * sizeof(float)); break;
+				case Shader::PARAMETER_MISCTYPE: a = As<Float4>(Int4(instanceID)); break;
 				default: ASSERT(false);
 				}
 

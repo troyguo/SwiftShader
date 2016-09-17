@@ -28,7 +28,7 @@ namespace sw
 	{
 		if(shader->getVersion() >= 0x0300)
 		{
-			if(shader->vPosDeclared)
+			if(shader->isVPosDeclared())
 			{
 				if(!halfIntegerCoordinates)
 				{
@@ -48,7 +48,7 @@ namespace sw
 				}
 			}
 
-			if(shader->vFaceDeclared)
+			if(shader->isVFaceDeclared())
 			{
 				Float4 area = *Pointer<Float>(primitive + OFFSET(Primitive, area));
 				Float4 face = booleanFaceRegister ? Float4(As<Float4>(CmpNLT(area, Float4(0.0f)))) : area;
@@ -320,10 +320,10 @@ namespace sw
 			case Shader::OPCODE_CMP:        cmp(d, s0, s1, control);                       break;
 			case Shader::OPCODE_ALL:        all(d.x, s0);                                  break;
 			case Shader::OPCODE_ANY:        any(d.x, s0);                                  break;
-			case Shader::OPCODE_NOT:        not(d, s0);                                    break;
-			case Shader::OPCODE_OR:         or(d, s0, s1);                                 break;
-			case Shader::OPCODE_XOR:        xor(d, s0, s1);                                break;
-			case Shader::OPCODE_AND:        and(d, s0, s1);                                break;
+			case Shader::OPCODE_NOT:        bitwise_not(d, s0);                            break;
+			case Shader::OPCODE_OR:         bitwise_or(d, s0, s1);                         break;
+			case Shader::OPCODE_XOR:        bitwise_xor(d, s0, s1);                        break;
+			case Shader::OPCODE_AND:        bitwise_and(d, s0, s1);                        break;
 			case Shader::OPCODE_EQ:         equal(d, s0, s1);                              break;
 			case Shader::OPCODE_NE:         notEqual(d, s0, s1);                           break;
 			case Shader::OPCODE_END:                                                       break;
@@ -604,6 +604,7 @@ namespace sw
 			case FORMAT_A8B8G8R8:
 			case FORMAT_SRGB8_X8:
 			case FORMAT_SRGB8_A8:
+			case FORMAT_G8R8:
 			case FORMAT_R8:
 			case FORMAT_A8:
 			case FORMAT_G16R16:
@@ -741,6 +742,7 @@ namespace sw
 			case FORMAT_X8B8G8R8:
 			case FORMAT_SRGB8_X8:
 			case FORMAT_SRGB8_A8:
+			case FORMAT_G8R8:
 			case FORMAT_R8:
 			case FORMAT_A8:
 			case FORMAT_G16R16:
