@@ -41,13 +41,13 @@ source_set("swiftshader_reactor") {
   ]
 
   sources = [
-    "Nucleus.cpp",
+    "LLVMReactor.cpp",
     "Routine.cpp",
-    "RoutineManager.cpp",
+    "LLVMRoutine.cpp",
+    "LLVMRoutineManager.cpp",
   ]
 
   if (is_win) {
-    sources += [ "DLL.cpp" ]
     configs -= [ "//build/config/win:unicode" ]
   }
 
