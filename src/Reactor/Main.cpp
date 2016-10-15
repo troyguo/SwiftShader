@@ -14,13 +14,13 @@
 
 #include "Reactor.hpp"
 
-#include <cassert>
+#include "gtest/gtest.h"
 
 using namespace sw;
 
 int reference(int *p, int y)
 {
-	int x = *p;
+	int x = p[-1];
 	int z = 4;
 
 	for(int i = 0; i < 10; i++)
@@ -29,11 +29,11 @@ int reference(int *p, int y)
 	}
 
 	int sum = x + y + z;
-   
+
 	return sum;
 }
 
-int main()
+TEST(SubzeroReactorSample, SubzeroReactor)
 {
 	Routine *routine = nullptr;
 
@@ -41,7 +41,7 @@ int main()
 		Function<Int(Pointer<Int>, Int)> function;
 		{
 			Pointer<Int> p = function.Arg<0>();
-			Int x = *p;
+			Int x = p[-1];
 			Int y = function.Arg<1>();
 			Int z = 4;
 
@@ -49,6 +49,10 @@ int main()
 			{
 				z += (2 << i) - (i / 3);
 			}
+
+			Float4 v;
+			v.z = As<Float>(z);
+			z = As<Int>(Float(Float4(v.xzxx).y));
 
 			Int sum = x + y + z;
    
@@ -60,13 +64,17 @@ int main()
 		if(routine)
 		{
 			int (*callable)(int*, int) = (int(*)(int*,int))routine->getEntry();
-			int one = 1;
-			int result = callable(&one, 2);
-			assert(result == reference(&one, 2));
+			int one[2] = {1, 0};
+			int result = callable(&one[1], 2);
+			EXPECT_EQ(result, reference(&one[1], 2));
 		}
 	}
 
 	delete routine;
+}
 
-	return 0;
+int main(int argc, char **argv)
+{
+	::testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
 }

@@ -97,9 +97,9 @@ namespace sw
 
 		// Memory instructions
 		static Value *createLoad(Value *ptr, Type *type, bool isVolatile = false, unsigned int align = 0);
-		static Value *createStore(Value *value, Value *ptr, bool isVolatile = false, unsigned int align = 0);
-		static Constant *createStore(Constant *constant, Value *ptr, bool isVolatile = false, unsigned int align = 0);
-		static Value *createGEP(Value *ptr, Value *index);
+		static Value *createStore(Value *value, Value *ptr, Type *type, bool isVolatile = false, unsigned int align = 0);
+		static Constant *createStore(Constant *constant, Value *ptr, Type *type, bool isVolatile = false, unsigned int align = 0);
+		static Value *createGEP(Value *ptr, Type *type, Value *index);
 
 		// Atomic instructions
 		static Value *createAtomicAdd(Value *ptr, Value *value);
@@ -113,8 +113,6 @@ namespace sw
 		static Value *createSIToFP(Value *V, Type *destType);
 		static Value *createFPTrunc(Value *V, Type *destType);
 		static Value *createFPExt(Value *V, Type *destType);
-		static Value *createPtrToInt(Value *V, Type *destType);
-		static Value *createIntToPtr(Value *V, Type *destType);
 		static Value *createBitCast(Value *V, Type *destType);
 		static Value *createIntCast(Value *V, Type *destType, bool isSigned);
 
@@ -145,19 +143,15 @@ namespace sw
 		static Value *createFCmpUNE(Value *lhs, Value *rhs);
 
 		// Vector instructions
-		static Value *createExtractElement(Value *vector, int index);
+		static Value *createExtractElement(Value *vector, Type *type, int index);
 		static Value *createInsertElement(Value *vector, Value *element, int index);
-		static Value *createShuffleVector(Value *V1, Value *V2, Value *mask);
+		static Value *createShuffleVector(Value *V1, Value *V2, const int *select);
 
 		// Other instructions
 		static Value *createSelect(Value *C, Value *ifTrue, Value *ifFalse);
 		static Value *createSwitch(Value *V, BasicBlock *Dest, unsigned NumCases);
 		static void addSwitchCase(Value *Switch, int Case, BasicBlock *Branch);
 		static void createUnreachable();
-
-		// Derived instructions
-		static Value *createSwizzle(Value *val, unsigned char select);
-		static Value *createMask(Value *lhs, Value *rhs, unsigned char select);
 
 		// Constant values
 		static Constant *createNullValue(Type *Ty);
