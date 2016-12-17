@@ -12,28 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef sw_Rasterizer_hpp
-#define sw_Rasterizer_hpp
+#ifndef sw_Optimizer_hpp
+#define sw_Optimizer_hpp
 
-#include "Context.hpp"
-
-#include "PixelProcessor.hpp"
-#include "Config.hpp"
+#include "src/IceCfg.h"
 
 namespace sw
 {
-	class Rasterizer : public Function<Void(Pointer<Byte>, Int, Int, Pointer<Byte>)>
-	{
-	public:
-		Rasterizer() : primitive(Arg<0>()), count(Arg<1>()), cluster(Arg<2>()), data(Arg<3>()) {}
-		virtual ~Rasterizer() {};
-
-	protected:
-		Pointer<Byte> primitive;
-		Int count;
-		Int cluster;
-		Pointer<Byte> data;
-	};
+	void optimize(Ice::Cfg *function);
 }
 
-#endif   // sw_Rasterizer_hpp
+#endif   // sw_Optimizer_hpp

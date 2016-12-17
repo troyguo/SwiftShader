@@ -2732,6 +2732,7 @@ namespace sw
 			return false;
 		case FORMAT_R32F:
 		case FORMAT_G32R32F:
+		case FORMAT_B32G32R32F:
 		case FORMAT_X32B32G32R32F:
 		case FORMAT_A32B32G32R32F:
 		case FORMAT_D32F:
@@ -2819,6 +2820,7 @@ namespace sw
 		case FORMAT_G8R8I_SNORM:
 			return component >= 2;
 		case FORMAT_A16W16V16U16:
+		case FORMAT_B32G32R32F:
 		case FORMAT_X32B32G32R32F:
 		case FORMAT_X8B8G8R8I:
 		case FORMAT_X16B16G16R16I:
@@ -3051,6 +3053,7 @@ namespace sw
 		int height2 = (height + 1) & ~1;
 
 		// FIXME: Unpacking byte4 to short4 in the sampler currently involves reading 8 bytes,
+		// and stencil operations also read 8 bytes per four 8-bit stencil values,
 		// so we have to allocate 4 extra bytes to avoid buffer overruns.
 		return allocateZero(size(width2, height2, depth, format) + 4);
 	}

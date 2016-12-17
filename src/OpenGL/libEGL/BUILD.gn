@@ -42,7 +42,7 @@ shared_library("swiftshader_libEGL") {
     "../common/Object.cpp",
     "Config.cpp",
     "Display.cpp",
-    "Surface.cpp",
+    "EGLSurface.cpp",
     "libEGL.cpp",
     "libEGL.def",
     "libEGL.rc",
@@ -52,6 +52,11 @@ shared_library("swiftshader_libEGL") {
 
   if (is_debug) {
     sources += [ "../common/debug.cpp" ]
+  } else if (is_linux) {
+    sources += [
+      "../../Renderer/Surface.cpp",
+      "../common/Image.cpp",
+    ]
   }
 
   if (is_mac) {

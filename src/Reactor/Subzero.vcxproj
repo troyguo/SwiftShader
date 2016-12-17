@@ -90,6 +90,7 @@
       <AdditionalIncludeDirectories>..\;$(SolutionDir)third_party\pnacl-subzero;$(SolutionDir)third_party\llvm-subzero\include;$(SolutionDir)third_party\pnacl-subzero\pnacl-llvm\include;SubmoduleCheck</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ForcedIncludeFiles>src/IceTypes.h</ForcedIncludeFiles>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -107,6 +108,7 @@
       <AdditionalIncludeDirectories>..\;$(SolutionDir)third_party\pnacl-subzero;$(SolutionDir)third_party\llvm-subzero\include;$(SolutionDir)third_party\pnacl-subzero\pnacl-llvm\include;SubmoduleCheck</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ForcedIncludeFiles>src/IceTypes.h</ForcedIncludeFiles>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -126,6 +128,7 @@
       <AdditionalIncludeDirectories>..\;$(SolutionDir)third_party\pnacl-subzero;$(SolutionDir)third_party\llvm-subzero\include;$(SolutionDir)third_party\pnacl-subzero\pnacl-llvm\include;SubmoduleCheck</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>src/IceTypes.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -151,6 +154,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <ForcedIncludeFiles>src/IceTypes.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -200,6 +204,7 @@
     <ClCompile Include="$(SolutionDir)third_party\pnacl-subzero\src\IceTimerTree.cpp" />
     <ClCompile Include="$(SolutionDir)third_party\pnacl-subzero\src\IceTypes.cpp" />
     <ClCompile Include="$(SolutionDir)third_party\pnacl-subzero\src\IceVariableSplitting.cpp" />
+    <ClCompile Include="Optimizer.cpp" />
     <ClCompile Include="Routine.cpp" />
     <ClCompile Include="SubzeroReactor.cpp" />
   </ItemGroup>
@@ -254,6 +259,13 @@
     <ClInclude Include="$(SolutionDir)third_party\pnacl-subzero\src\IceTypes.h" />
     <ClInclude Include="$(SolutionDir)third_party\pnacl-subzero\src\IceUtils.h" />
     <ClInclude Include="$(SolutionDir)third_party\pnacl-subzero\src\IceVariableSplitting.h" />
+    <ClInclude Include="$(SolutionDir)third_party\pnacl-subzero\src\IceTargetLoweringX8664.h" />
+    <ClInclude Include="$(SolutionDir)third_party\pnacl-subzero\src\IceTargetLoweringX8664Traits.h" />
+    <ClInclude Include="$(SolutionDir)third_party\pnacl-subzero\src\IceAssemblerX8664.h" />
+    <ClInclude Include="$(SolutionDir)third_party\pnacl-subzero\src\IceConditionCodesX8664.h" />
+    <ClInclude Include="$(SolutionDir)third_party\pnacl-subzero\src\IceInstX8664.h" />
+    <ClInclude Include="$(SolutionDir)third_party\pnacl-subzero\src\IceRegistersX8664.h" />
+    <ClInclude Include="Optimizer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(SolutionDir)third_party\pnacl-subzero\src\IceClFlags.def" />
