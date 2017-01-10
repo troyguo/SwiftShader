@@ -559,14 +559,7 @@ namespace sw
 	{
 		If(Ya != Yb)
 		{
-			Int xMin = *Pointer<Int>(data + OFFSET(DrawData,scissorX0));
-			Int xMax = *Pointer<Int>(data + OFFSET(DrawData,scissorX1));
-
 			Bool swap = Yb < Ya;
-
-			Pointer<Byte> leftEdge = primitive + q * sizeof(Primitive) + OFFSET(Primitive,outline->left);
-			Pointer<Byte> rightEdge = primitive + q * sizeof(Primitive) + OFFSET(Primitive,outline->right);
-			Pointer<Byte> edge = IfThenElse(swap, rightEdge, leftEdge);
 
 			Int X1 = IfThenElse(swap, Xb, Xa);
 			Int X2 = IfThenElse(swap, Xa, Xb);
@@ -578,6 +571,13 @@ namespace sw
 
 			If(y1 < y2)
 			{
+				Int xMin = *Pointer<Int>(data + OFFSET(DrawData,scissorX0));
+				Int xMax = *Pointer<Int>(data + OFFSET(DrawData,scissorX1));
+
+				Pointer<Byte> leftEdge = primitive + q * sizeof(Primitive) + OFFSET(Primitive,outline->left);
+				Pointer<Byte> rightEdge = primitive + q * sizeof(Primitive) + OFFSET(Primitive,outline->right);
+				Pointer<Byte> edge = IfThenElse(swap, rightEdge, leftEdge);
+
 				// Deltas
 				Int DX12 = X2 - X1;
 				Int DY12 = Y2 - Y1;
@@ -585,10 +585,10 @@ namespace sw
 				Int FDX12 = DX12 << 4;
 				Int FDY12 = DY12 << 4;
 
-				Int X = DX12 * ((y1 << 4) - Y1) + X1 * DY12;
-				Int x = X / FDY12;     // Edge
-				Int d = X % FDY12;     // Error-term
-				Int ceil = -d >> 31;   // Ceiling division: remainder <= 0
+				Int X = DX12 * ((y1 << 4) - Y1) + (X1 & 0x0000000F) * DY12;
+				Int x = (X1 >> 4) + X / FDY12;   // Edge
+				Int d = X % FDY12;               // Error-term
+				Int ceil = -d >> 31;             // Ceiling division: remainder <= 0
 				x -= ceil;
 				d -= ceil & FDY12;
 
