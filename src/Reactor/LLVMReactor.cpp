@@ -451,8 +451,13 @@ namespace sw
 		return value;
 	}
 
-	Value *Nucleus::createGEP(Value *ptr, Type *type, Value *index)
+	Value *Nucleus::createGEP(Value *ptr, Type *type, Value *index, bool unsignedIndex)
 	{
+		if(unsignedIndex && sizeof(void*) == 8)
+		{
+			index = createZExt(index, Long::getType());
+		}
+
 		assert(ptr->getType()->getContainedType(0) == type);
 		return V(::builder->CreateGEP(ptr, index));
 	}
@@ -2134,6 +2139,14 @@ namespace sw
 		Value *byte8 = Nucleus::createBitCast(int2, Byte8::getType());
 
 		return UnpackLow(RValue<Byte8>(byte8), RValue<Byte8>(byte8));
+	}
+
+	RValue<Short4> Unpack(RValue<Byte4> x, RValue<Byte4> y)
+	{
+		Value *xx = Nucleus::createInsertElement(V(UndefValue::get(VectorType::get(Int::getType(), 2))), x.value, 0);
+		Value *yy = Nucleus::createInsertElement(V(UndefValue::get(VectorType::get(Int::getType(), 2))), y.value, 0);
+
+		return UnpackLow(As<Byte8>(xx), As<Byte8>(yy));
 	}
 
 	RValue<Short4> UnpackLow(RValue<Byte8> x, RValue<Byte8> y)
@@ -6282,17 +6295,17 @@ namespace sw
 
 	RValue<Pointer<Byte>> operator+(RValue<Pointer<Byte>> lhs, int offset)
 	{
-		return RValue<Pointer<Byte>>(Nucleus::createGEP(lhs.value, Byte::getType(), V(Nucleus::createConstantInt(offset))));
+		return RValue<Pointer<Byte>>(Nucleus::createGEP(lhs.value, Byte::getType(), V(Nucleus::createConstantInt(offset)), false));
 	}
 
 	RValue<Pointer<Byte>> operator+(RValue<Pointer<Byte>> lhs, RValue<Int> offset)
 	{
-		return RValue<Pointer<Byte>>(Nucleus::createGEP(lhs.value, Byte::getType(), offset.value));
+		return RValue<Pointer<Byte>>(Nucleus::createGEP(lhs.value, Byte::getType(), offset.value, false));
 	}
 
 	RValue<Pointer<Byte>> operator+(RValue<Pointer<Byte>> lhs, RValue<UInt> offset)
 	{
-		return RValue<Pointer<Byte>>(Nucleus::createGEP(lhs.value, Byte::getType(), offset.value));
+		return RValue<Pointer<Byte>>(Nucleus::createGEP(lhs.value, Byte::getType(), offset.value, true));
 	}
 
 	RValue<Pointer<Byte>> operator+=(Pointer<Byte> &lhs, int offset)

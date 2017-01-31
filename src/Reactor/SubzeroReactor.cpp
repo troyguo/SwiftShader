@@ -140,6 +140,25 @@ namespace sw
 		return reinterpret_cast<BasicBlock*>(b);
 	}
 
+	static size_t typeSize(Type *type)
+	{
+		if(reinterpret_cast<std::intptr_t>(type) & EmulatedBits)
+		{
+			switch(reinterpret_cast<std::intptr_t>(type))
+			{
+			case Type_v2i32: return 8;
+			case Type_v4i16: return 8;
+			case Type_v2i16: return 4;
+			case Type_v8i8:  return 8;
+			case Type_v4i8:  return 4;
+			case Type_v2f32: return 8;
+			default: assert(false);
+			}
+		}
+
+		return Ice::typeWidthInBytes(T(type));
+	}
+
 	Optimization optimization[10] = {InstructionCombining, Disabled};
 
 	using ElfHeader = std::conditional<sizeof(void*) == 8, Elf64_Ehdr, Elf32_Ehdr>::type;
@@ -744,34 +763,12 @@ namespace sw
 
 		if(valueType & EmulatedBits)
 		{
-			switch(valueType)
-			{
-			case Type_v4i8:
-			case Type_v2i16:
-				{
-					const Ice::Intrinsics::IntrinsicInfo intrinsic = {Ice::Intrinsics::LoadSubVector, Ice::Intrinsics::SideEffects_F, Ice::Intrinsics::ReturnsTwice_F, Ice::Intrinsics::MemoryWrite_F};
-					auto target = ::context->getConstantUndef(Ice::IceType_i32);
-					auto load = Ice::InstIntrinsicCall::create(::function, 2, result, target, intrinsic);
-					load->addArg(ptr);
-					load->addArg(::context->getConstantInt32(4));
-					::basicBlock->appendInst(load);
-				}
-				break;
-			case Type_v2i32:
-			case Type_v8i8:
-			case Type_v4i16:
-			case Type_v2f32:
-				{
-					const Ice::Intrinsics::IntrinsicInfo intrinsic = {Ice::Intrinsics::LoadSubVector, Ice::Intrinsics::SideEffects_F, Ice::Intrinsics::ReturnsTwice_F, Ice::Intrinsics::MemoryWrite_F};
-					auto target = ::context->getConstantUndef(Ice::IceType_i32);
-					auto load = Ice::InstIntrinsicCall::create(::function, 2, result, target, intrinsic);
-					load->addArg(ptr);
-					load->addArg(::context->getConstantInt32(8));
-					::basicBlock->appendInst(load);
-				}
-				break;
-			default: assert(false && "UNIMPLEMENTED");
-			}
+			const Ice::Intrinsics::IntrinsicInfo intrinsic = {Ice::Intrinsics::LoadSubVector, Ice::Intrinsics::SideEffects_F, Ice::Intrinsics::ReturnsTwice_F, Ice::Intrinsics::MemoryWrite_F};
+			auto target = ::context->getConstantUndef(Ice::IceType_i32);
+			auto load = Ice::InstIntrinsicCall::create(::function, 2, result, target, intrinsic);
+			load->addArg(ptr);
+			load->addArg(::context->getConstantInt32(typeSize(type)));
+			::basicBlock->appendInst(load);
 		}
 		else
 		{
@@ -788,36 +785,13 @@ namespace sw
 
 		if(valueType & EmulatedBits)
 		{
-			switch(valueType)
-			{
-			case Type_v4i8:
-			case Type_v2i16:
-				{
-					const Ice::Intrinsics::IntrinsicInfo intrinsic = {Ice::Intrinsics::StoreSubVector, Ice::Intrinsics::SideEffects_T, Ice::Intrinsics::ReturnsTwice_F, Ice::Intrinsics::MemoryWrite_T};
-					auto target = ::context->getConstantUndef(Ice::IceType_i32);
-					auto store = Ice::InstIntrinsicCall::create(::function, 3, nullptr, target, intrinsic);
-					store->addArg(value);
-					store->addArg(ptr);
-					store->addArg(::context->getConstantInt32(4));
-					::basicBlock->appendInst(store);
-				}
-				break;
-			case Type_v2i32:
-			case Type_v8i8:
-			case Type_v4i16:
-			case Type_v2f32:
-				{
-					const Ice::Intrinsics::IntrinsicInfo intrinsic = {Ice::Intrinsics::StoreSubVector, Ice::Intrinsics::SideEffects_T, Ice::Intrinsics::ReturnsTwice_F, Ice::Intrinsics::MemoryWrite_T};
-					auto target = ::context->getConstantUndef(Ice::IceType_i32);
-					auto store = Ice::InstIntrinsicCall::create(::function, 3, nullptr, target, intrinsic);
-					store->addArg(value);
-					store->addArg(ptr);
-					store->addArg(::context->getConstantInt32(8));
-					::basicBlock->appendInst(store);
-				}
-				break;
-			default: assert(false && "UNIMPLEMENTED");
-			}
+			const Ice::Intrinsics::IntrinsicInfo intrinsic = {Ice::Intrinsics::StoreSubVector, Ice::Intrinsics::SideEffects_T, Ice::Intrinsics::ReturnsTwice_F, Ice::Intrinsics::MemoryWrite_T};
+			auto target = ::context->getConstantUndef(Ice::IceType_i32);
+			auto store = Ice::InstIntrinsicCall::create(::function, 3, nullptr, target, intrinsic);
+			store->addArg(value);
+			store->addArg(ptr);
+			store->addArg(::context->getConstantInt32(typeSize(type)));
+			::basicBlock->appendInst(store);
 		}
 		else
 		{
@@ -830,13 +804,13 @@ namespace sw
 		return value;
 	}
 
-	Value *Nucleus::createGEP(Value *ptr, Type *type, Value *index)
+	Value *Nucleus::createGEP(Value *ptr, Type *type, Value *index, bool unsignedIndex)
 	{
 		assert(index->getType() == Ice::IceType_i32);
 
 		if(auto *constant = llvm::dyn_cast<Ice::ConstantInteger32>(index))
 		{
-			int32_t offset = constant->getValue() * (int)Ice::typeWidthInBytes(T(type));
+			int32_t offset = constant->getValue() * (int)typeSize(type);
 
 			if(offset == 0)
 			{
@@ -848,12 +822,19 @@ namespace sw
 
 		if(!Ice::isByteSizedType(T(type)))
 		{
-			index = createMul(index, createConstantInt((int)Ice::typeWidthInBytes(T(type))));
+			index = createMul(index, createConstantInt((int)typeSize(type)));
 		}
 
 		if(sizeof(void*) == 8)
 		{
-			index = createSExt(index, T(Ice::IceType_i64));
+			if(unsignedIndex)
+			{
+				index = createZExt(index, T(Ice::IceType_i64));
+			}
+			else
+			{
+				index = createSExt(index, T(Ice::IceType_i64));
+			}
 		}
 
 		return createAdd(ptr, index);
@@ -2589,6 +2570,11 @@ namespace sw
 	{
 		int shuffle[16] = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};   // Real type is v16i8
 		return RValue<Short4>(Nucleus::createShuffleVector(x.value, x.value, shuffle));
+	}
+
+	RValue<Short4> Unpack(RValue<Byte4> x, RValue<Byte4> y)
+	{
+		return UnpackLow(As<Byte8>(x), As<Byte8>(y));
 	}
 
 	RValue<Short4> UnpackLow(RValue<Byte8> x, RValue<Byte8> y)
@@ -6298,12 +6284,12 @@ namespace sw
 
 	RValue<Pointer<Byte>> operator+(RValue<Pointer<Byte>> lhs, RValue<Int> offset)
 	{
-		return RValue<Pointer<Byte>>(Nucleus::createGEP(lhs.value, Byte::getType(), offset.value));
+		return RValue<Pointer<Byte>>(Nucleus::createGEP(lhs.value, Byte::getType(), offset.value, false));
 	}
 
 	RValue<Pointer<Byte>> operator+(RValue<Pointer<Byte>> lhs, RValue<UInt> offset)
 	{
-		return RValue<Pointer<Byte>>(Nucleus::createGEP(lhs.value, Byte::getType(), offset.value));
+		return RValue<Pointer<Byte>>(Nucleus::createGEP(lhs.value, Byte::getType(), offset.value, true));
 	}
 
 	RValue<Pointer<Byte>> operator+=(Pointer<Byte> &lhs, int offset)

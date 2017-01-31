@@ -454,9 +454,9 @@ namespace
 			{
 				Ice::Inst *def = definition[address];
 
-				if(!def || llvm::isa<Ice::InstAlloca>(def))
+				if(def && llvm::isa<Ice::InstAlloca>(def))
 				{
-					return uses[address].size() == 1;   // Dead if this store is the only use
+					return uses[address].size() == uses[address].stores.size();   // Dead if all uses are stores
 				}
 			}
 		}
