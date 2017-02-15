@@ -37,6 +37,8 @@ namespace egl
 
 	class Display
 	{
+		virtual void typeinfo();   // Dummy key method (https://gcc.gnu.org/onlinedocs/gcc/Vague-Linkage.html)
+
 	public:
 		static Display *get(EGLDisplay dpy);
 
