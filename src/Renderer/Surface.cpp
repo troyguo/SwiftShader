@@ -2731,6 +2731,10 @@ namespace sw
 		case FORMAT_A32B32G32R32I:
 		case FORMAT_A32B32G32R32UI:
 			return false;
+		case FORMAT_R16F:
+		case FORMAT_G16R16F:
+		case FORMAT_B16G16R16F:
+		case FORMAT_A16B16G16R16F:
 		case FORMAT_R32F:
 		case FORMAT_G32R32F:
 		case FORMAT_B32G32R32F:
@@ -2941,7 +2945,7 @@ namespace sw
 		}
 	}
 
-	bool Surface::isNonNormalizedInteger(Format format)
+	bool Surface::isSignedNonNormalizedInteger(Format format)
 	{
 		switch(format)
 		{
@@ -2957,6 +2961,16 @@ namespace sw
 		case FORMAT_X16B16G16R16I:
 		case FORMAT_G16R16I:
 		case FORMAT_R16I:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	bool Surface::isUnsignedNonNormalizedInteger(Format format)
+	{
+		switch(format)
+		{
 		case FORMAT_A16B16G16R16UI:
 		case FORMAT_X16B16G16R16UI:
 		case FORMAT_G16R16UI:
@@ -2973,6 +2987,21 @@ namespace sw
 		default:
 			return false;
 		}
+	}
+
+	bool Surface::isNonNormalizedInteger(Format format)
+	{
+		return isSignedNonNormalizedInteger(format) ||
+		       isUnsignedNonNormalizedInteger(format);
+	}
+
+	bool Surface::isNormalizedInteger(Format format)
+	{
+		return !isFloatFormat(format) &&
+		       !isNonNormalizedInteger(format) &&
+		       !isCompressed(format) &&
+		       !isDepth(format) &&
+		       !isStencil(format);
 	}
 
 	int Surface::componentCount(Format format)
@@ -3289,7 +3318,7 @@ namespace sw
 		unsigned char maskedS = s & mask;
 		unsigned char invMask = ~mask;
 		unsigned int fill = maskedS;
-		fill = fill | (fill << 8) | (fill << 16) + (fill << 24);
+		fill = fill | (fill << 8) | (fill << 16) | (fill << 24);
 
 		char *buffer = (char*)lockStencil(0, 0, 0, PUBLIC);
 
