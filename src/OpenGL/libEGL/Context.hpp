@@ -26,7 +26,7 @@ class Display;
 class Surface;
 class Image;
 
-class Context : public gl::Object
+class [[clang::lto_visibility_public]] Context : public gl::Object
 {
 public:
 	Context(egl::Display *display) : display(display) {}
@@ -35,7 +35,8 @@ public:
 	virtual void bindTexImage(Surface *surface) = 0;
 	virtual EGLenum validateSharedImage(EGLenum target, GLuint name, GLuint textureLevel) = 0;
 	virtual Image *createSharedImage(EGLenum target, GLuint name, GLuint textureLevel) = 0;
-	virtual int getClientVersion() const = 0;
+	virtual EGLint getClientVersion() const = 0;
+	virtual EGLint getConfigID() const = 0;
 	virtual void finish() = 0;
 
 protected:

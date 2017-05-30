@@ -84,12 +84,27 @@ Display::~Display()
 	#endif
 }
 
+#if !defined(__i386__) && defined(_M_IX86)
+	#define __i386__ 1
+#endif
+
+#if !defined(__x86_64__) && (defined(_M_AMD64) || defined (_M_X64))
+	#define __x86_64__ 1
+#endif
+
 static void cpuid(int registers[4], int info)
 {
-	#if defined(_WIN32)
-		__cpuid(registers, info);
+	#if defined(__i386__) || defined(__x86_64__)
+		#if defined(_WIN32)
+			__cpuid(registers, info);
+		#else
+			__asm volatile("cpuid": "=a" (registers[0]), "=b" (registers[1]), "=c" (registers[2]), "=d" (registers[3]): "a" (info));
+		#endif
 	#else
-		__asm volatile("cpuid": "=a" (registers[0]), "=b" (registers[1]), "=c" (registers[2]), "=d" (registers[3]): "a" (info));
+		registers[0] = 0;
+		registers[1] = 0;
+		registers[2] = 0;
+		registers[3] = 0;
 	#endif
 }
 
@@ -107,10 +122,12 @@ bool Display::initialize()
 		return true;
 	}
 
-	if(!detectSSE())
-	{
-		return false;
-	}
+	#if defined(__i386__) || defined(__x86_64__)
+		if(!detectSSE())
+		{
+			return false;
+		}
+	#endif
 
 	mMinSwapInterval = 0;
 	mMaxSwapInterval = 4;
@@ -424,7 +441,7 @@ EGLContext Display::createContext(EGLConfig configHandle, const egl::Context *sh
 	{
 		if(libGLES_CM)
 		{
-			context = libGLES_CM->es1CreateContext(this, shareContext);
+			context = libGLES_CM->es1CreateContext(this, shareContext, config);
 		}
 	}
 	else if((clientVersion == 2 && config->mRenderableType & EGL_OPENGL_ES2_BIT) ||
@@ -432,7 +449,7 @@ EGLContext Display::createContext(EGLConfig configHandle, const egl::Context *sh
 	{
 		if(libGLESv2)
 		{
-			context = libGLESv2->es2CreateContext(this, shareContext, clientVersion);
+			context = libGLESv2->es2CreateContext(this, shareContext, clientVersion, config);
 		}
 	}
 	else

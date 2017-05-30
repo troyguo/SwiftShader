@@ -45,8 +45,8 @@
 
 namespace es2
 {
-Context::Context(egl::Display *display, const Context *shareContext, EGLint clientVersion)
-	: egl::Context(display), clientVersion(clientVersion)
+Context::Context(egl::Display *display, const Context *shareContext, EGLint clientVersion, const egl::Config *config)
+	: egl::Context(display), clientVersion(clientVersion), config(config)
 {
 	sw::Context *context = new sw::Context();
 	device = new es2::Device(context);
@@ -311,6 +311,11 @@ void Context::makeCurrent(egl::Surface *surface)
 EGLint Context::getClientVersion() const
 {
 	return clientVersion;
+}
+
+EGLint Context::getConfigID() const
+{
+	return config->mConfigID;
 }
 
 // This function will set all of the state-related dirty flags, so that all state is set during next pre-draw.
@@ -2091,6 +2096,9 @@ template<typename T> bool Context::getIntegerv(GLenum pname, T *params) const
 	case GL_MAX_DRAW_BUFFERS:
 		*params = MAX_DRAW_BUFFERS;
 		return true;
+	case GL_MAX_COLOR_ATTACHMENTS: // Note: MAX_COLOR_ATTACHMENTS_EXT added by GL_EXT_draw_buffers
+		*params = MAX_COLOR_ATTACHMENTS;
+		return true;
 	default:
 		break;
 	}
@@ -2122,9 +2130,6 @@ template<typename T> bool Context::getIntegerv(GLenum pname, T *params) const
 			return true;
 		case GL_MAX_ARRAY_TEXTURE_LAYERS:
 			*params = IMPLEMENTATION_MAX_TEXTURE_SIZE;
-			return true;
-		case GL_MAX_COLOR_ATTACHMENTS: // Note: not supported in OES_framebuffer_object
-			*params = MAX_COLOR_ATTACHMENTS;
 			return true;
 		case GL_MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS:
 			*params = MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS;
@@ -4358,8 +4363,8 @@ const GLubyte *Context::getExtensions(GLuint index, GLuint *numExt) const
 
 }
 
-egl::Context *es2CreateContext(egl::Display *display, const egl::Context *shareContext, int clientVersion)
+egl::Context *es2CreateContext(egl::Display *display, const egl::Context *shareContext, int clientVersion, const egl::Config *config)
 {
 	ASSERT(!shareContext || shareContext->getClientVersion() == clientVersion);   // Should be checked by eglCreateContext
-	return new es2::Context(display, static_cast<const es2::Context*>(shareContext), clientVersion);
+	return new es2::Context(display, static_cast<const es2::Context*>(shareContext), clientVersion, config);
 }

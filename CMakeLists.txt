@@ -17,6 +17,7 @@ option(BUILD_GLES_CM "Build the OpenGL ES 1.1 library" 1)
 option(USE_GROUP_SOURCES "Group the source files in a folder tree for Visual Studio" 1)
 
 option(BUILD_SAMPLES "Build sample programs" 1)
+option(BUILD_TESTS "Build test programs" 1)
 
 set(REACTOR_BACKEND "LLVM" CACHE STRING "JIT compiler back-end used by Reactor")
 set_property(CACHE REACTOR_BACKEND PROPERTY STRINGS LLVM Subzero)
@@ -48,10 +49,18 @@ else()
     message(FATAL_ERROR "Platform is not supported")
 endif()
 
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(ARCH "x86_64")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch")
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(ARCH "aarch64")
+    else()
+        set(ARCH "arm")
+    endif()
 else()
-    set(ARCH "x86")
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(ARCH "x86_64")
+    else()
+        set(ARCH "x86")
+    endif()
 endif()
 
 ###########################################################
@@ -105,7 +114,7 @@ set(SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 set(OPENGL_DIR ${SOURCE_DIR}/OpenGL)
 set(OPENGL_COMPILER_DIR ${OPENGL_DIR}/compiler)
 set(LLVM_DIR ${CMAKE_SOURCE_DIR}/third_party/LLVM)
-set(SUBZERO_DIR ${CMAKE_SOURCE_DIR}/third_party/pnacl-subzero)
+set(SUBZERO_DIR ${CMAKE_SOURCE_DIR}/third_party/subzero)
 set(SUBZERO_LLVM_DIR ${CMAKE_SOURCE_DIR}/third_party/llvm-subzero)
 set(TESTS_DIR ${CMAKE_SOURCE_DIR}/tests)
 set(HELLO2_DIR ${CMAKE_SOURCE_DIR}/third_party/PowerVR_SDK/Examples/Beginner/01_HelloAPI/OGLES2)
@@ -128,7 +137,7 @@ if(MSVC)
 else()
     set_cpp_flag("--std=c++11")
     set_cpp_flag("-Wall")
-    set_cpp_flag("-fexceptions")
+    set_cpp_flag("-fno-exceptions")
 
     # Don't allow symbols to be overridden by another module.
     # This enables libGLES_CM and libGLESv2 to statically link LLVM.
@@ -158,9 +167,8 @@ else()
     set_cpp_flag("-s" RELEASE)
 
     # For distribution it is more important to be slim than super optimized
-    # so even in Release we use only -O2
-    set_cpp_flag("-O2 -Os" RELEASE)
-    set_cpp_flag("-O2 -Os" RELWITHDEBINFO)
+    set_cpp_flag("-Os" RELEASE)
+    set_cpp_flag("-Os" RELWITHDEBINFO)
 
     set_cpp_flag("-DNDEBUG" RELEASE)
     set_cpp_flag("-DNDEBUG" RELWITHDEBINFO)
@@ -428,12 +436,6 @@ set(LLVM_LIST
     ${LLVM_DIR}/lib/Support/raw_os_ostream.cpp
     ${LLVM_DIR}/lib/Support/raw_ostream.cpp
     ${LLVM_DIR}/lib/Support/system_error.cpp
-    ${LLVM_DIR}/lib/TableGen/Error.cpp
-    ${LLVM_DIR}/lib/TableGen/Main.cpp
-    ${LLVM_DIR}/lib/TableGen/Record.cpp
-    ${LLVM_DIR}/lib/TableGen/TGLexer.cpp
-    ${LLVM_DIR}/lib/TableGen/TGParser.cpp
-    ${LLVM_DIR}/lib/TableGen/TableGenBackend.cpp
     ${LLVM_DIR}/lib/Target/Mangler.cpp
     ${LLVM_DIR}/lib/Target/TargetData.cpp
     ${LLVM_DIR}/lib/Target/TargetELFWriterInfo.cpp
@@ -590,25 +592,35 @@ if(${REACTOR_BACKEND} STREQUAL "Subzero")
         ${SUBZERO_DIR}/src/IceRNG.cpp
         ${SUBZERO_DIR}/src/IceSwitchLowering.cpp
         ${SUBZERO_DIR}/src/IceTargetLowering.cpp
-        ${SUBZERO_DIR}/src/IceTargetLoweringX86.cpp
         ${SUBZERO_DIR}/src/IceThreading.cpp
         ${SUBZERO_DIR}/src/IceTimerTree.cpp
         ${SUBZERO_DIR}/src/IceTypes.cpp
         ${SUBZERO_DIR}/src/IceVariableSplitting.cpp
     )
 
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    if(ARCH STREQUAL "x86_64")
         list(APPEND SUBZERO_LIST
+            ${SUBZERO_DIR}/src/IceTargetLoweringX86.cpp
             ${SUBZERO_DIR}/src/IceInstX8664.cpp
             ${SUBZERO_DIR}/src/IceTargetLoweringX8664.cpp
         )
         set(SUBZERO_TARGET X8664)
-    else()
+    elseif(ARCH STREQUAL "x86")
         list(APPEND SUBZERO_LIST
+            ${SUBZERO_DIR}/src/IceTargetLoweringX86.cpp
             ${SUBZERO_DIR}/src/IceInstX8632.cpp
             ${SUBZERO_DIR}/src/IceTargetLoweringX8632.cpp
         )
         set(SUBZERO_TARGET X8632)
+    elseif(ARCH STREQUAL "arm")
+        list(APPEND SUBZERO_LIST
+            ${SUBZERO_DIR}/src/IceAssemblerARM32.cpp
+            ${SUBZERO_DIR}/src/IceInstARM32.cpp
+            ${SUBZERO_DIR}/src/IceTargetLoweringARM32.cpp
+        )
+        set(SUBZERO_TARGET ARM32)
+    else()
+        message(FATAL_ERROR "Architecture '${ARCH}' not supported by Subzero")
     endif()
 
     file(GLOB_RECURSE SUBZERO_DEPENDENCIES_LIST
@@ -629,7 +641,6 @@ if(${REACTOR_BACKEND} STREQUAL "Subzero")
         ${SUBZERO_DIR}/
         ${SUBZERO_LLVM_DIR}/include/
         ${SUBZERO_DIR}/pnacl-llvm/include/
-        ${SOURCE_DIR}/Reactor/SubmoduleCheck/
      )
 
     if(WIN32)
@@ -728,6 +739,9 @@ file(GLOB_RECURSE EGL_LIST
     ${OPENGL_DIR}/common/debug.h
     ${CMAKE_SOURCE_DIR}/include/*.h
 )
+# Key method definitions are only required to appease the gold linker,
+# and cause vtable linking issues with other linkers.
+list(REMOVE_ITEM EGL_LIST ${OPENGL_DIR}/libEGL/TypeInfo.cpp)
 
 file(GLOB_RECURSE GL32_LIST
     ${OPENGL_DIR}/libGL/*.cpp
@@ -750,6 +764,9 @@ file(GLOB_RECURSE GLES2_LIST
     ${CMAKE_SOURCE_DIR}/include/GLES2/*.h
     ${CMAKE_SOURCE_DIR}/include/GLES3/*.h
 )
+# Key method definitions are only required to appease the gold linker,
+# and cause vtable linking issues with other linkers.
+list(REMOVE_ITEM GLES2_LIST ${OPENGL_DIR}/libGLESv2/TypeInfo.cpp)
 
 file(GLOB_RECURSE GLES_CM_LIST
     ${OPENGL_DIR}/libGLES_CM/*.cpp
@@ -976,5 +993,28 @@ if(BUILD_SAMPLES)
         set_source_files_properties(${HELLO2_DIR}/Build/OSX/en.lproj/MainMenu.xib PROPERTIES
             MACOSX_PACKAGE_LOCATION "Resources"
         )
+    endif()
+endif()
+
+if(BUILD_TESTS AND ${REACTOR_BACKEND} STREQUAL "Subzero")
+    set(SUBZERO_TEST_LIST
+        ${SOURCE_DIR}/Reactor/Main.cpp
+        ${CMAKE_SOURCE_DIR}/third_party/googletest/googletest/src/gtest-all.cc
+    )
+
+    set(SUBZERO_TEST_INCLUDE_DIR
+        ${CMAKE_SOURCE_DIR}/third_party/googletest/googletest/include
+        ${CMAKE_SOURCE_DIR}/third_party/googletest/googletest/
+    )
+
+    add_executable(SubzeroTest ${SUBZERO_TEST_LIST})
+    set_target_properties(SubzeroTest PROPERTIES
+        INCLUDE_DIRECTORIES "${SUBZERO_TEST_INCLUDE_DIR}"
+        FOLDER "Tests"
+    )
+    if(WIN32)
+        target_link_libraries(SubzeroTest ReactorSubzero)
+    else()
+        target_link_libraries(SubzeroTest ReactorSubzero pthread dl)
     endif()
 endif()

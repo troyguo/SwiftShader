@@ -426,13 +426,14 @@ struct State
 	GLint packSkipImages;
 };
 
-class Context : public egl::Context
+class [[clang::lto_visibility_public]] Context : public egl::Context
 {
 public:
-	Context(egl::Display *display, const Context *shareContext, EGLint clientVersion);
+	Context(egl::Display *display, const Context *shareContext, EGLint clientVersion, const egl::Config *config);
 
-	virtual void makeCurrent(egl::Surface *surface);
-	virtual EGLint getClientVersion() const;
+	void makeCurrent(egl::Surface *surface) override;
+	EGLint getClientVersion() const override;
+	EGLint getConfigID() const override;
 
 	void markAllStateDirty();
 
@@ -673,7 +674,7 @@ public:
 	void clearStencilBuffer(const GLint value);
 	void drawArrays(GLenum mode, GLint first, GLsizei count, GLsizei instanceCount = 1);
 	void drawElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const void *indices, GLsizei instanceCount = 1);
-	void finish();
+	void finish() override;
 	void flush();
 
 	void recordInvalidEnum();
@@ -690,9 +691,9 @@ public:
 	                     GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1,
 	                     GLbitfield mask, bool filter, bool allowPartialDepthStencilBlit);
 
-	virtual void bindTexImage(egl::Surface *surface);
-	virtual EGLenum validateSharedImage(EGLenum target, GLuint name, GLuint textureLevel);
-	virtual egl::Image *createSharedImage(EGLenum target, GLuint name, GLuint textureLevel);
+	void bindTexImage(egl::Surface *surface) override;
+	EGLenum validateSharedImage(EGLenum target, GLuint name, GLuint textureLevel) override;
+	egl::Image *createSharedImage(EGLenum target, GLuint name, GLuint textureLevel) override;
 	egl::Image *getSharedImage(GLeglImageOES image);
 
 	Device *getDevice();
@@ -725,6 +726,7 @@ private:
 	Query *createQuery(GLuint handle, GLenum type);
 
 	const EGLint clientVersion;
+	const egl::Config *const config;
 
 	State mState;
 

@@ -46,7 +46,7 @@ GLsizei ComputePitch(GLsizei width, GLenum format, GLenum type, GLint alignment)
 GLsizei ComputeCompressedSize(GLsizei width, GLsizei height, GLenum format);
 size_t ComputePackingOffset(GLenum format, GLenum type, GLsizei width, GLsizei height, GLint alignment, GLint skipImages, GLint skipRows, GLint skipPixels);
 
-class Image : public sw::Surface, public gl::Object
+class [[clang::lto_visibility_public]] Image : public sw::Surface, public gl::Object
 {
 	virtual void typeinfo();   // Dummy key method (https://gcc.gnu.org/onlinedocs/gcc/Vague-Linkage.html)
 
@@ -254,9 +254,7 @@ private:
 
 	virtual ~AndroidNativeImage()
 	{
-		// Wait for any draw calls that use this image to finish
-		resource->lock(sw::DESTRUCT);
-		resource->unlock();
+		sync();   // Wait for any threads that use this image to finish.
 
 		nativeBuffer->common.decRef(&nativeBuffer->common);
 	}
