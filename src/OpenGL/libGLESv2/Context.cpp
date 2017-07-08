@@ -35,7 +35,7 @@
 #include "VertexDataManager.h"
 #include "IndexDataManager.h"
 #include "libEGL/Display.h"
-#include "libEGL/EGLSurface.h"
+#include "common/Surface.hpp"
 #include "Common/Half.hpp"
 
 #include <EGL/eglext.h>
@@ -265,7 +265,7 @@ Context::~Context()
 	delete device;
 }
 
-void Context::makeCurrent(egl::Surface *surface)
+void Context::makeCurrent(gl::Surface *surface)
 {
 	if(!mHasBeenCurrent)
 	{
@@ -274,35 +274,42 @@ void Context::makeCurrent(egl::Surface *surface)
 
 		mState.viewportX = 0;
 		mState.viewportY = 0;
-		mState.viewportWidth = surface->getWidth();
-		mState.viewportHeight = surface->getHeight();
+		mState.viewportWidth = surface ? surface->getWidth() : 0;
+		mState.viewportHeight = surface ? surface->getHeight() : 0;
 
 		mState.scissorX = 0;
 		mState.scissorY = 0;
-		mState.scissorWidth = surface->getWidth();
-		mState.scissorHeight = surface->getHeight();
+		mState.scissorWidth = surface ? surface->getWidth() : 0;
+		mState.scissorHeight = surface ? surface->getHeight() : 0;
 
 		mHasBeenCurrent = true;
 	}
 
-	// Wrap the existing resources into GL objects and assign them to the '0' names
-	egl::Image *defaultRenderTarget = surface->getRenderTarget();
-	egl::Image *depthStencil = surface->getDepthStencil();
-
-	Colorbuffer *colorbufferZero = new Colorbuffer(defaultRenderTarget);
-	DepthStencilbuffer *depthStencilbufferZero = new DepthStencilbuffer(depthStencil);
-	Framebuffer *framebufferZero = new DefaultFramebuffer(colorbufferZero, depthStencilbufferZero);
-
-	setFramebufferZero(framebufferZero);
-
-	if(defaultRenderTarget)
+	if(surface)
 	{
-		defaultRenderTarget->release();
+		// Wrap the existing resources into GL objects and assign them to the '0' names
+		egl::Image *defaultRenderTarget = surface->getRenderTarget();
+		egl::Image *depthStencil = surface->getDepthStencil();
+
+		Colorbuffer *colorbufferZero = new Colorbuffer(defaultRenderTarget);
+		DepthStencilbuffer *depthStencilbufferZero = new DepthStencilbuffer(depthStencil);
+		Framebuffer *framebufferZero = new DefaultFramebuffer(colorbufferZero, depthStencilbufferZero);
+
+		setFramebufferZero(framebufferZero);
+
+		if(defaultRenderTarget)
+		{
+			defaultRenderTarget->release();
+		}
+
+		if(depthStencil)
+		{
+			depthStencil->release();
+		}
 	}
-
-	if(depthStencil)
+	else
 	{
-		depthStencil->release();
+		setFramebufferZero(nullptr);
 	}
 
 	markAllStateDirty();
@@ -3241,10 +3248,11 @@ void Context::readPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
 	sw::Rect dstRect = { 0, 0, width, height };
 	rect.clip(0, 0, renderTarget->getWidth(), renderTarget->getHeight());
 
-	sw::Surface externalSurface(width, height, 1, egl::ConvertFormatType(format, type), pixels, outputPitch, outputPitch * outputHeight);
+	sw::Surface *externalSurface = sw::Surface::create(width, height, 1, egl::ConvertFormatType(format, type), pixels, outputPitch, outputPitch * outputHeight);
 	sw::SliceRect sliceRect(rect);
 	sw::SliceRect dstSliceRect(dstRect);
-	device->blit(renderTarget, sliceRect, &externalSurface, dstSliceRect, false);
+	device->blit(renderTarget, sliceRect, externalSurface, dstSliceRect, false);
+	delete externalSurface;
 
 	renderTarget->release();
 }
@@ -3507,6 +3515,11 @@ void Context::drawElements(GLenum mode, GLuint start, GLuint end, GLsizei count,
 			transformFeedback->addVertexOffset(primitiveCount * verticesPerPrimitive);
 		}
 	}
+}
+
+void Context::blit(sw::Surface *source, const sw::SliceRect &sRect, sw::Surface *dest, const sw::SliceRect &dRect)
+{
+	device->blit(source, sRect, dest, dRect, false);
 }
 
 void Context::finish()
@@ -4137,7 +4150,7 @@ void Context::blitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1
 	}
 }
 
-void Context::bindTexImage(egl::Surface *surface)
+void Context::bindTexImage(gl::Surface *surface)
 {
 	es2::Texture2D *textureObject = getTexture2D();
 
@@ -4298,6 +4311,7 @@ const GLubyte *Context::getExtensions(GLuint index, GLuint *numExt) const
 #endif
 		"GL_EXT_texture_filter_anisotropic",
 		"GL_EXT_texture_format_BGRA8888",
+		"GL_EXT_texture_rg",
 		"GL_ANGLE_framebuffer_blit",
 		"GL_ANGLE_framebuffer_multisample",
 		"GL_ANGLE_instanced_arrays",

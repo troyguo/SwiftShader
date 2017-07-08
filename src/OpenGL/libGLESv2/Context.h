@@ -37,7 +37,6 @@
 namespace egl
 {
 class Display;
-class Surface;
 class Config;
 }
 
@@ -431,7 +430,7 @@ class [[clang::lto_visibility_public]] Context : public egl::Context
 public:
 	Context(egl::Display *display, const Context *shareContext, EGLint clientVersion, const egl::Config *config);
 
-	void makeCurrent(egl::Surface *surface) override;
+	void makeCurrent(gl::Surface *surface) override;
 	EGLint getClientVersion() const override;
 	EGLint getConfigID() const override;
 
@@ -665,6 +664,9 @@ public:
 
 	bool hasZeroDivisor() const;
 
+	void drawArrays(GLenum mode, GLint first, GLsizei count, GLsizei instanceCount = 1);
+	void drawElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const void *indices, GLsizei instanceCount = 1);
+	void blit(sw::Surface *source, const sw::SliceRect &sRect, sw::Surface *dest, const sw::SliceRect &dRect) override;
 	void readPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLsizei *bufSize, void* pixels);
 	void clear(GLbitfield mask);
 	void clearColorBuffer(GLint drawbuffer, const GLint *value);
@@ -672,8 +674,6 @@ public:
 	void clearColorBuffer(GLint drawbuffer, const GLfloat *value);
 	void clearDepthBuffer(const GLfloat value);
 	void clearStencilBuffer(const GLint value);
-	void drawArrays(GLenum mode, GLint first, GLsizei count, GLsizei instanceCount = 1);
-	void drawElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const void *indices, GLsizei instanceCount = 1);
 	void finish() override;
 	void flush();
 
@@ -691,7 +691,7 @@ public:
 	                     GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1,
 	                     GLbitfield mask, bool filter, bool allowPartialDepthStencilBlit);
 
-	void bindTexImage(egl::Surface *surface) override;
+	void bindTexImage(gl::Surface *surface) override;
 	EGLenum validateSharedImage(EGLenum target, GLuint name, GLuint textureLevel) override;
 	egl::Image *createSharedImage(EGLenum target, GLuint name, GLuint textureLevel) override;
 	egl::Image *getSharedImage(GLeglImageOES image);
@@ -701,7 +701,7 @@ public:
 	const GLubyte *getExtensions(GLuint index, GLuint *numExt = nullptr) const;
 
 private:
-	virtual ~Context();
+	~Context() override;
 
 	void applyScissor(int width, int height);
 	bool applyRenderTarget();

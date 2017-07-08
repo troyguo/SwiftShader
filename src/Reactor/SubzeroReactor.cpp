@@ -450,7 +450,7 @@ namespace sw
 			buffer.reserve(0x1000);
 		}
 
-		virtual ~ELFMemoryStreamer()
+		~ELFMemoryStreamer() override
 		{
 			#if defined(_WIN32)
 				if(buffer.size() != 0)
@@ -559,6 +559,8 @@ namespace sw
 
 	Nucleus::~Nucleus()
 	{
+		delete ::routine;
+
 		delete ::allocator;
 		delete ::function;
 		delete ::context;
@@ -585,11 +587,11 @@ namespace sw
 		::function->translate();
 		assert(!::function->hasError());
 
-		auto *globals = ::function->getGlobalInits().release();
+		auto globals = ::function->getGlobalInits();
 
 		if(globals && !globals->empty())
 		{
-			::context->getGlobals()->merge(globals);
+			::context->getGlobals()->merge(globals.get());
 		}
 
 		::context->emitFileHeader();
@@ -604,7 +606,10 @@ namespace sw
 		objectWriter->setUndefinedSyms(::context->getConstantExternSyms());
 		objectWriter->writeNonUserSections();
 
-		return ::routine;
+		Routine *handoffRoutine = ::routine;
+		::routine = nullptr;
+
+		return handoffRoutine;
 	}
 
 	void Nucleus::optimize()
