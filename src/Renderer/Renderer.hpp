@@ -65,6 +65,7 @@ namespace sw
 		bool fullPixelPositionRegister;
 		bool leadingVertexFirst;
 		bool secondaryColor;
+		bool colorsDefaultToZero;
 	};
 
 	static const Conventions OpenGL =
@@ -74,7 +75,8 @@ namespace sw
 		true,    // booleanFaceRegister
 		true,    // fullPixelPositionRegister
 		false,   // leadingVertexFirst
-		false    // secondaryColor
+		false,   // secondaryColor
+		true,    // colorsDefaultToZero
 	};
 
 	static const Conventions Direct3D =
@@ -85,6 +87,7 @@ namespace sw
 		false,   // fullPixelPositionRegister
 		true,    // leadingVertexFirst
 		true,    // secondardyColor
+		false,   // colorsDefaultToZero
 	};
 
 	struct Query
@@ -323,7 +326,7 @@ namespace sw
 
 		void draw(DrawType drawType, unsigned int indexOffset, unsigned int count, bool update = true);
 
-		void clear(void* pixel, Format format, Surface *dest, const SliceRect &dRect, unsigned int rgbaMask);
+		void clear(void *value, Format format, Surface *dest, const Rect &rect, unsigned int rgbaMask);
 		void blit(Surface *source, const SliceRect &sRect, Surface *dest, const SliceRect &dRect, bool filter, bool isStencil = false);
 		void blit3D(Surface *source, Surface *dest);
 
@@ -345,6 +348,7 @@ namespace sw
 		void setMipmapLOD(SamplerType type, int sampler, float bias);
 		void setBorderColor(SamplerType type, int sampler, const Color<float> &borderColor);
 		void setMaxAnisotropy(SamplerType type, int sampler, float maxAnisotropy);
+		void setHighPrecisionFiltering(SamplerType type, int sampler, bool highPrecisionFiltering);
 		void setSwizzleR(SamplerType type, int sampler, SwizzleType swizzleR);
 		void setSwizzleG(SamplerType type, int sampler, SwizzleType swizzleG);
 		void setSwizzleB(SamplerType type, int sampler, SwizzleType swizzleB);

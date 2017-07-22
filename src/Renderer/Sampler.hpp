@@ -36,7 +36,8 @@ namespace sw
 		short height[4];
 		short depth[4];
 		short onePitchP[4];
-		int sliceP[2];
+		int4 pitchP;
+		int4 sliceP;
 	};
 
 	struct Texture
@@ -140,6 +141,7 @@ namespace sw
 			SwizzleType swizzleG           : BITS(SWIZZLE_LAST);
 			SwizzleType swizzleB           : BITS(SWIZZLE_LAST);
 			SwizzleType swizzleA           : BITS(SWIZZLE_LAST);
+			bool highPrecisionFiltering    : 1;
 
 			#if PERF_PROFILE
 			bool compressedFormat          : 1;
@@ -163,6 +165,7 @@ namespace sw
 		void setReadSRGB(bool sRGB);
 		void setBorderColor(const Color<float> &borderColor);
 		void setMaxAnisotropy(float maxAnisotropy);
+		void setHighPrecisionFiltering(bool highPrecisionFiltering);
 		void setSwizzleR(SwizzleType swizzleR);
 		void setSwizzleG(SwizzleType swizzleG);
 		void setSwizzleB(SwizzleType swizzleB);
@@ -202,6 +205,7 @@ namespace sw
 		MipmapType mipmapFilterState;
 		bool sRGB;
 		bool gather;
+		bool highPrecisionFiltering;
 
 		SwizzleType swizzleR;
 		SwizzleType swizzleG;

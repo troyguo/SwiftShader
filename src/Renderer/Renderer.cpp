@@ -48,6 +48,7 @@ namespace sw
 	extern bool fullPixelPositionRegister;
 	extern bool leadingVertexFirst;         // Flat shading uses first vertex, else last
 	extern bool secondaryColor;             // Specular lighting is applied after texturing
+	extern bool colorsDefaultToZero;
 
 	extern bool forceWindowed;
 	extern bool complementaryDepthBuffer;
@@ -110,6 +111,7 @@ namespace sw
 		sw::fullPixelPositionRegister = conventions.fullPixelPositionRegister;
 		sw::leadingVertexFirst = conventions.leadingVertexFirst;
 		sw::secondaryColor = conventions.secondaryColor;
+		sw::colorsDefaultToZero = conventions.colorsDefaultToZero;
 		sw::exactColorRounding = exactColorRounding;
 
 		setRenderTarget(0, 0);
@@ -670,9 +672,15 @@ namespace sw
 		}
 	}
 
-	void Renderer::clear(void *pixel, Format format, Surface *dest, const SliceRect &dRect, unsigned int rgbaMask)
+	void Renderer::clear(void *value, Format format, Surface *dest, const Rect &clearRect, unsigned int rgbaMask)
 	{
-		blitter->clear(pixel, format, dest, dRect, rgbaMask);
+		SliceRect rect = clearRect;
+		int samples = dest->getDepth();
+
+		for(rect.slice = 0; rect.slice < samples; rect.slice++)
+		{
+			blitter->clear(value, format, dest, rect, rgbaMask);
+		}
 	}
 
 	void Renderer::blit(Surface *source, const SliceRect &sRect, Surface *dest, const SliceRect &dRect, bool filter, bool isStencil)
@@ -2311,6 +2319,18 @@ namespace sw
 		else
 		{
 			VertexProcessor::setMaxAnisotropy(sampler, maxAnisotropy);
+		}
+	}
+
+	void Renderer::setHighPrecisionFiltering(SamplerType type, int sampler, bool highPrecisionFiltering)
+	{
+		if(type == SAMPLER_PIXEL)
+		{
+			PixelProcessor::setHighPrecisionFiltering(sampler, highPrecisionFiltering);
+		}
+		else
+		{
+			VertexProcessor::setHighPrecisionFiltering(sampler, highPrecisionFiltering);
 		}
 	}
 

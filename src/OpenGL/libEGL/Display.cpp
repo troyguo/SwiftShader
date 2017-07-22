@@ -46,7 +46,7 @@ namespace egl
 class DisplayImplementation : public Display
 {
 public:
-	DisplayImplementation(void *nativeDisplay) : Display(nativeDisplay) {}
+	DisplayImplementation(EGLDisplay dpy, void *nativeDisplay) : Display(dpy, nativeDisplay) {}
 	~DisplayImplementation() override {}
 
 	Image *getSharedImage(EGLImageKHR name) override
@@ -72,12 +72,12 @@ Display *Display::get(EGLDisplay dpy)
 		}
 	#endif
 
-	static DisplayImplementation display(nativeDisplay);
+	static DisplayImplementation display(dpy, nativeDisplay);
 
 	return &display;
 }
 
-Display::Display(void *nativeDisplay) : nativeDisplay(nativeDisplay)
+Display::Display(EGLDisplay eglDisplay, void *nativeDisplay) : eglDisplay(eglDisplay), nativeDisplay(nativeDisplay)
 {
 	mMinSwapInterval = 1;
 	mMaxSwapInterval = 1;
@@ -610,6 +610,11 @@ EGLint Display::getMaxSwapInterval() const
 	return mMaxSwapInterval;
 }
 
+EGLDisplay Display::getEGLDisplay() const
+{
+	return eglDisplay;
+}
+
 void *Display::getNativeDisplay() const
 {
 	return nativeDisplay;
@@ -671,7 +676,10 @@ sw::Format Display::getDisplayFormat() const
 			if(fd != -1)
 			{
 				struct fb_var_screeninfo info;
-				if(ioctl(fd, FBIOGET_VSCREENINFO, &info) >= 0)
+				int io = ioctl(fd, FBIOGET_VSCREENINFO, &info);
+				close(fd);
+
+				if(io >= 0)
 				{
 					switch(info.bits_per_pixel)
 					{
@@ -711,8 +719,6 @@ sw::Format Display::getDisplayFormat() const
 						UNIMPLEMENTED();
 					}
 				}
-
-				close(fd);
 			}
 		}
 
